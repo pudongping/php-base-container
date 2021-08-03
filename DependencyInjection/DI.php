@@ -127,4 +127,4 @@ class Atmosphere {
 
 // 如果此时想获取花的实例
 $rose = DI::build(Flowers::class);
-// var_dump($rose);
+var_dump($rose);
