@@ -67,7 +67,7 @@ class Container
             $this->bindings[$abstract] = compact('concrete', 'shared');
         } else {
             if (! is_string($concrete) || ! class_exists($concrete)) {
-                throw new InvalidArgumentException('The second parameter must be callback or class.');
+                throw new InvalidArgumentException('Argument 2 must be callback or class.');
             }
         }
 
