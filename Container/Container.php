@@ -76,6 +76,20 @@ class Container
     }
 
     /**
+     * 将现有实例注册为容器中的共享实例
+     *
+     * @param string $abstract
+     * @param mixed $instance
+     * @return mixed
+     */
+    public function instance($abstract, $instance)
+    {
+        $this->instances[$abstract] = $instance;
+
+        return $instance;
+    }
+
+    /**
      * 从容器解析给定类型
      *
      * @param string $abstract  目标类的名称
