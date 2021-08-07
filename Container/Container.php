@@ -16,47 +16,115 @@ class Container
      *
      * @var static
      */
-    protected static $instance;
+    private static $instance;
 
     /**
      * 容器的绑定
      *
      * @var array[]
      */
-    protected $bindings = [];
+    private $bindings = [];
 
     /**
      * 容器的共享实例
      *
      * @var object[]
      */
-    protected $instances = [];
+    private $instances = [];
 
     public static function getInstance()
     {
-        if (is_null(static::$instance)) {
-            static::$instance = new static;
+        if (is_null(self::$instance)) {
+            self::$instance = new self;
         }
 
-        return static::$instance;
+        // self::$instance->bindings[Container::class] = self::$instance;
+
+        return self::$instance;
     }
 
-    public function bind($className, $generator)
+    /**
+     * 在容器中注册共享绑定
+     *
+     * @param $abstract
+     * @param null $concrete
+     */
+    public function singleton($abstract, $concrete = null)
     {
+        $this->bind($abstract, $concrete, true);
+    }
+
+    /**
+     * 向容器注册绑定
+     *
+     * @param $abstract
+     * @param null $concrete
+     * @param false $shared
+     */
+    public function bind($abstract, $concrete = null, $shared = false)
+    {
+        if ($concrete instanceof Closure) {
+            $this->bindings[$abstract] = compact('concrete', 'shared');
+        } else {
+            if (! is_string($concrete) || ! class_exists($concrete)) {
+                throw new InvalidArgumentException('The second parameter must be callback or class.');
+            }
+        }
+
+        $this->bindings[$abstract] = compact('concrete', 'shared');
 
     }
 
     /**
      * 从容器解析给定类型
      *
-     * @param $abstract
-     * @param array $parameters
+     * @param string $abstract  目标类的名称
+     * @param array $parameters  实例化目标类时所需要的参数（非对象类型约束参数数组）
+     * @return mixed|object
      */
-    public function make($abstract, array $parameters = [])
+    public function make(string $abstract, array $parameters = [])
     {
+
+        if (! isset($this->instances[$abstract]) && ! isset($this->bindings[$abstract])) {
+            if (! class_exists($abstract)) throw new InvalidArgumentException("Target class [$abstract] does not exist.");
+        }
+
+        if (isset($this->instances[$abstract])) {
+            return $this->instances[$abstract];
+        }
+
+        try {
+
+            if (isset($this->bindings[$abstract])) {
+                $concrete = $this->bindings[$abstract]['concrete'];
+                if (is_callable($concrete)) {
+                    $instance = $this->resolveCallable($concrete, $parameters);
+                } else {
+                    $instance = $this->resolveClass($concrete, $parameters);
+                }
+            } else {
+                $instance = $this->resolveClass($abstract, $parameters);
+            }
+
+            if (isset($this->bindings[$abstract]) && $this->bindings[$abstract]['shared']) {
+                $this->instances[$abstract] = $instance;
+            }
+
+            return $instance;
+        } catch (\Exception $exception) {
+            print_r($exception->getTraceAsString());
+        }
 
     }
 
+    /**
+     * 解决回调函数时的依赖
+     *
+     * @param callable $callbackName  目标回调函数
+     * @param array $realArgs
+     * @return mixed
+     * @throws ReflectionException
+     */
     private function resolveCallable(callable $callbackName, array $realArgs = [])
     {
         $reflector = new ReflectionFunction($callbackName);
@@ -72,7 +140,15 @@ class Container
         return $reflector->invokeArgs($list);
     }
 
-    private function resolveClass(ReflectionParameter $className, array $realArgs = [])
+    /**
+     * 解决对象时的依赖
+     *
+     * @param string|object $className  目标类的名称
+     * @param array $realArgs
+     * @return object  目标类对应的实例对象
+     * @throws ReflectionException
+     */
+    private function resolveClass($className, array $realArgs = [])
     {
         try {
             // 对目标类进行反射（解析其方法、属性）
@@ -102,6 +178,13 @@ class Container
         return $reflector->newInstanceArgs($list);
     }
 
+    /**
+     * 递归解析依赖树
+     *
+     * @param array $dependencies  目标类的构造函数参数列表
+     * @param array $parameters  实例化目标类时的其他参数（非类型提示参数）
+     * @return array  实例化目标类时构造函数所需的所有参数
+     */
     private function resolveDependencies(array $dependencies, array $parameters = [])
     {
         // 用于存储所有的参数
