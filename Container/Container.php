@@ -1,6 +1,6 @@
 <?php
 /**
- *
+ * 实现一个简单的 php 容器
  *
  * Created by PhpStorm
  * User: Alex
