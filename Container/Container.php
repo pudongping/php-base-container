@@ -47,9 +47,9 @@ class Container
      * 在容器中注册共享绑定
      *
      * @param $abstract
-     * @param null $concrete
+     * @param $concrete
      */
-    public function singleton($abstract, $concrete = null)
+    public function singleton($abstract, $concrete)
     {
         $this->bind($abstract, $concrete, true);
     }
@@ -58,10 +58,10 @@ class Container
      * 向容器注册绑定
      *
      * @param $abstract
-     * @param null $concrete
+     * @param $concrete
      * @param false $shared
      */
-    public function bind($abstract, $concrete = null, $shared = false)
+    public function bind($abstract, $concrete, $shared = false)
     {
         if ($concrete instanceof Closure) {
             $this->bindings[$abstract] = compact('concrete', 'shared');
@@ -112,6 +112,7 @@ class Container
 
             return $instance;
         } catch (\Exception $exception) {
+            echo($exception->getMessage() . PHP_EOL);
             print_r($exception->getTraceAsString());
         }
 
