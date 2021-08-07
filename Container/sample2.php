@@ -1,6 +1,6 @@
 <?php
 /**
- *
+ * 往容器中注册一个单例对象实例
  *
  * Created by PhpStorm
  * User: Alex
@@ -53,8 +53,14 @@ $container->singleton('rose', function () use ($container) {
 $rose = $container->make('rose');
 $rose1 = $container->make('rose');
 
-// output： true
+// output：true
 var_dump($rose instanceof $rose1);
+
+// output：true
+var_dump($rose === $rose1);
+
+// output：true
+var_dump($rose == $rose1);
 
 // output：red
 var_dump($rose->color);
