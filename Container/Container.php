@@ -32,13 +32,18 @@ class Container
      */
     private $instances = [];
 
+    public function __construct()
+    {
+        $this->instances[Container::class] = $this;
+    }
+
     public static function getInstance()
     {
         if (is_null(self::$instance)) {
             self::$instance = new self;
         }
 
-        // self::$instance->bindings[Container::class] = self::$instance;
+        self::$instance->instances[Container::class] = self::$instance;
 
         return self::$instance;
     }
